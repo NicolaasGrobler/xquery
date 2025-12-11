@@ -1,14 +1,31 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Download, Files, FileText, MoreVertical, Trash2 } from "lucide-react";
+import {
+  Download,
+  Files,
+  FileText,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryClient, trpc, trpcClient } from "@/utils/trpc";
 
@@ -41,7 +58,29 @@ function formatDate(date: Date | string) {
 }
 
 export function FileList() {
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [fileToRename, setFileToRename] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [newName, setNewName] = useState("");
+
   const filesQuery = useQuery(trpc.files.list.queryOptions({ limit: 50 }));
+
+  const renameMutation = useMutation({
+    mutationFn: ({ fileId, name }: { fileId: string; name: string }) =>
+      trpcClient.files.rename.mutate({ fileId, name }),
+    onSuccess: () => {
+      toast.success("File renamed");
+      queryClient.invalidateQueries({ queryKey: [["files", "list"]] });
+      setRenameDialogOpen(false);
+      setFileToRename(null);
+      setNewName("");
+    },
+    onError: () => {
+      toast.error("Failed to rename file");
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (fileId: string) => trpcClient.files.delete.mutate({ fileId }),
@@ -66,6 +105,20 @@ export function FileList() {
       toast.error("Failed to get download link");
     },
   });
+
+  function openRenameDialog(file: { id: string; name: string }) {
+    setFileToRename(file);
+    setNewName(file.name);
+    setRenameDialogOpen(true);
+  }
+
+  function handleRenameSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!(fileToRename && newName.trim())) {
+      return;
+    }
+    renameMutation.mutate({ fileId: fileToRename.id, name: newName.trim() });
+  }
 
   if (filesQuery.isLoading) {
     return (
@@ -147,6 +200,14 @@ export function FileList() {
                       Download
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      onClick={() =>
+                        openRenameDialog({ id: file.id, name: file.name })
+                      }
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       disabled={deleteMutation.isPending}
                       onClick={() => deleteMutation.mutate(file.id)}
                       variant="destructive"
@@ -161,6 +222,45 @@ export function FileList() {
           </div>
         )}
       </CardContent>
+
+      <Dialog onOpenChange={setRenameDialogOpen} open={renameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleRenameSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="rename-input">Name</Label>
+                <Input
+                  autoFocus
+                  disabled={renameMutation.isPending}
+                  id="rename-input"
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Enter file name"
+                  value={newName}
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button
+                disabled={renameMutation.isPending}
+                onClick={() => setRenameDialogOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={!newName.trim() || renameMutation.isPending}
+                type="submit"
+              >
+                {renameMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

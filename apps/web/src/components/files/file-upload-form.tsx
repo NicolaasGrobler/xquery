@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { queryClient, trpcClient } from "@/utils/trpc";
 
 const ALLOWED_TYPES = [
@@ -30,9 +31,20 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function validateFile(file: File): string | null {
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return "Invalid file type. Allowed: PDF, DOCX, TXT, MD";
+  }
+  if (file.size > MAX_SIZE) {
+    return "File too large. Maximum size: 10 MB";
+  }
+  return null;
+}
+
 export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
 
   const uploadMutation = useMutation({
     mutationFn: async ({
@@ -101,26 +113,49 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
     },
   });
 
-  function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) {
+  function handleFile(file: File) {
+    const error = validateFile(file);
+    if (error) {
+      toast.error(error);
       return;
     }
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error("Invalid file type. Allowed: PDF, DOCX, TXT, MD");
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > MAX_SIZE) {
-      toast.error("File too large. Maximum size: 10 MB");
-      event.target.value = "";
-      return;
-    }
-
     setSelectedFile(file);
     form.setFieldValue("customName", file.name.replace(/\.[^.]+$/, ""));
+  }
+
+  function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleFile(file);
+    }
+  }
+
+  function handleDragEnter(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(true);
+  }
+
+  function handleDragLeave(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(false);
+  }
+
+  function handleDragOver(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function handleDrop(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(false);
+
+    const file = event.dataTransfer.files[0];
+    if (file) {
+      handleFile(file);
+    }
   }
 
   function clearSelectedFile() {
@@ -128,6 +163,10 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }
+
+  function openFilePicker() {
+    fileInputRef.current?.click();
   }
 
   return (
@@ -147,21 +186,52 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
             form.handleSubmit();
           }}
         >
-          <div className="space-y-2">
-            <Label htmlFor="file">Select File</Label>
-            <Input
-              accept={ALLOWED_EXTENSIONS}
-              disabled={uploadMutation.isPending}
-              id="file"
-              onChange={handleFileSelect}
-              ref={fileInputRef}
-              type="file"
-            />
-            <p className="text-muted-foreground text-sm">
-              Supported: PDF, DOCX, TXT, MD (max 10 MB)
-            </p>
-          </div>
+          {/* Hidden file input */}
+          <input
+            accept={ALLOWED_EXTENSIONS}
+            className="hidden"
+            disabled={uploadMutation.isPending}
+            onChange={handleFileSelect}
+            ref={fileInputRef}
+            type="file"
+          />
 
+          {/* Dropzone */}
+          {!selectedFile && (
+            <button
+              className={cn(
+                "flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors",
+                isDragActive
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+              )}
+              disabled={uploadMutation.isPending}
+              onClick={openFilePicker}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              type="button"
+            >
+              <Upload
+                className={cn(
+                  "mb-4 h-10 w-10",
+                  isDragActive ? "text-primary" : "text-muted-foreground"
+                )}
+              />
+              <p className="mb-1 font-medium text-sm">
+                {isDragActive ? "Drop file here" : "Drag & drop your file here"}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                or click to browse
+              </p>
+              <p className="mt-2 text-muted-foreground text-xs">
+                PDF, DOCX, TXT, MD (max 10 MB)
+              </p>
+            </button>
+          )}
+
+          {/* Selected file preview */}
           {selectedFile && (
             <div className="flex items-center justify-between rounded-md border bg-muted/50 p-3">
               <div className="flex items-center gap-2">
@@ -185,6 +255,7 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
             </div>
           )}
 
+          {/* Custom name input */}
           {selectedFile && (
             <form.Field name="customName">
               {(field) => (

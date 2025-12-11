@@ -18,9 +18,10 @@ const router = createRouter({
 });
 
 declare module "@tanstack/react-router" {
-  type Register = {
+  // biome-ignore lint/style/useConsistentTypeDefinitions: interface required for module augmentation
+  interface Register {
     router: typeof router;
-  };
+  }
 }
 
 const rootElement = document.getElementById("app");
