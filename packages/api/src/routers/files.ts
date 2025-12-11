@@ -12,6 +12,7 @@ import {
 } from "@xquery/db";
 import { z } from "zod";
 import { protectedProcedure, router } from "../index";
+import { openai } from "../lib/openai";
 
 const mimeTypeSchema = z.enum(ALLOWED_MIME_TYPES);
 
@@ -132,6 +133,7 @@ export const filesRouter = router({
           mimeType: file.mimeType,
           size: file.size,
           createdAt: file.createdAt,
+          openaiFileId: file.openaiFileId,
         })
         .from(file)
         .where(eq(file.userId, userId))
@@ -203,7 +205,10 @@ export const filesRouter = router({
       const userId = ctx.session.user.id;
 
       const result = await db
-        .select({ storagePath: file.storagePath })
+        .select({
+          storagePath: file.storagePath,
+          openaiFileId: file.openaiFileId,
+        })
         .from(file)
         .where(and(eq(file.id, input.fileId), eq(file.userId, userId)))
         .limit(1);
@@ -222,6 +227,14 @@ export const filesRouter = router({
 
       if (storageError) {
         console.error("Storage deletion error:", storageError);
+      }
+
+      if (fileRecord.openaiFileId) {
+        try {
+          await openai.files.delete(fileRecord.openaiFileId);
+        } catch (error) {
+          console.error("OpenAI file deletion error:", error);
+        }
       }
 
       await db.delete(file).where(eq(file.id, input.fileId));

@@ -1,14 +1,17 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  Bot,
   Download,
   Files,
   FileText,
   MoreVertical,
   Pencil,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { FileChatDialog } from "@/components/files/file-chat-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -64,6 +67,11 @@ export function FileList() {
     name: string;
   } | null>(null);
   const [newName, setNewName] = useState("");
+  const [chatDialogOpen, setChatDialogOpen] = useState(false);
+  const [fileToChat, setFileToChat] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const filesQuery = useQuery(trpc.files.list.queryOptions({ limit: 50 }));
 
@@ -118,6 +126,11 @@ export function FileList() {
       return;
     }
     renameMutation.mutate({ fileId: fileToRename.id, name: newName.trim() });
+  }
+
+  function openChatDialog(file: { id: string; name: string }) {
+    setFileToChat(file);
+    setChatDialogOpen(true);
   }
 
   if (filesQuery.isLoading) {
@@ -177,7 +190,15 @@ export function FileList() {
                     {FILE_TYPE_LABELS[file.mimeType] || "FILE"}
                   </div>
                   <div>
-                    <p className="font-medium">{file.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{file.name}</p>
+                      {file.openaiFileId && (
+                        <Sparkles
+                          className="h-3 w-3 text-amber-500"
+                          title="Synced to AI"
+                        />
+                      )}
+                    </div>
                     <p className="text-muted-foreground text-xs">
                       {formatFileSize(file.size)} &middot;{" "}
                       {formatDate(file.createdAt)}
@@ -206,6 +227,14 @@ export function FileList() {
                     >
                       <Pencil className="mr-2 h-4 w-4" />
                       Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        openChatDialog({ id: file.id, name: file.name })
+                      }
+                    >
+                      <Bot className="mr-2 h-4 w-4" />
+                      Ask AI
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={deleteMutation.isPending}
@@ -261,6 +290,12 @@ export function FileList() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <FileChatDialog
+        file={fileToChat}
+        onOpenChange={setChatDialogOpen}
+        open={chatDialogOpen}
+      />
     </Card>
   );
 }

@@ -1,4 +1,5 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
+import { chatRouter } from "./chat";
 import { filesRouter } from "./files";
 
 export const appRouter = router({
@@ -8,5 +9,6 @@ export const appRouter = router({
     user: ctx.session.user,
   })),
   files: filesRouter,
+  chat: chatRouter,
 });
 export type AppRouter = typeof appRouter;
