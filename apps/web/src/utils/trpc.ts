@@ -5,6 +5,12 @@ import type { AppRouter } from "@xquery/api/routers/index";
 import { toast } from "sonner";
 
 export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 30,
+      refetchOnWindowFocus: false,
+    },
+  },
   queryCache: new QueryCache({
     onError: (error) => {
       toast.error(error.message, {

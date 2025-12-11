@@ -31,7 +31,8 @@
         "noNamespaceImport": "off"
       },
       "style": {
-        "noNestedTernary": "off"
+        "noNestedTernary": "off",
+        "useFilenamingConvention": "off"
       },
       "nursery": {
         "noLeakedRender": "off"

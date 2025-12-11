@@ -1,9 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
-  Bot,
   Download,
   Files,
   FileText,
+  MessageSquare,
   MoreVertical,
   Pencil,
   Sparkles,
@@ -11,7 +12,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FileChatDialog } from "@/components/files/file-chat-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -61,19 +61,23 @@ function formatDate(date: Date | string) {
 }
 
 export function FileList() {
+  const navigate = useNavigate();
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [fileToRename, setFileToRename] = useState<{
     id: string;
     name: string;
   } | null>(null);
   const [newName, setNewName] = useState("");
-  const [chatDialogOpen, setChatDialogOpen] = useState(false);
-  const [fileToChat, setFileToChat] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
 
   const filesQuery = useQuery(trpc.files.list.queryOptions({ limit: 50 }));
+  const chatsQuery = useQuery(trpc.chat.list.queryOptions({}));
+
+  const chatsByFileId = new Map<string, string>();
+  for (const chat of chatsQuery.data ?? []) {
+    if (!chatsByFileId.has(chat.fileId)) {
+      chatsByFileId.set(chat.fileId, chat.id);
+    }
+  }
 
   const renameMutation = useMutation({
     mutationFn: ({ fileId, name }: { fileId: string; name: string }) =>
@@ -114,6 +118,37 @@ export function FileList() {
     },
   });
 
+  const createChatMutation = useMutation({
+    mutationFn: (fileId: string) => trpcClient.chat.create.mutate({ fileId }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        [["chat", "get"], { input: { chatId: data.chatId }, type: "query" }],
+        {
+          id: data.chatId,
+          fileId: data.fileId,
+          fileName: data.fileName,
+          title: data.title,
+          messages: [],
+        }
+      );
+      queryClient.setQueryData(
+        [["chat", "list"], { input: { fileId: data.fileId }, type: "query" }],
+        [
+          {
+            id: data.chatId,
+            title: data.title,
+            updatedAt: data.updatedAt,
+          },
+        ]
+      );
+      navigate({ to: "/chat/$chatId", params: { chatId: data.chatId } });
+    },
+    onError: (error) => {
+      console.error("Failed to start chat:", error);
+      toast.error("Failed to start chat");
+    },
+  });
+
   function openRenameDialog(file: { id: string; name: string }) {
     setFileToRename(file);
     setNewName(file.name);
@@ -126,11 +161,6 @@ export function FileList() {
       return;
     }
     renameMutation.mutate({ fileId: fileToRename.id, name: newName.trim() });
-  }
-
-  function openChatDialog(file: { id: string; name: string }) {
-    setFileToChat(file);
-    setChatDialogOpen(true);
   }
 
   if (filesQuery.isLoading) {
@@ -185,7 +215,21 @@ export function FileList() {
                 className="flex items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted/50"
                 key={file.id}
               >
-                <div className="flex items-center gap-3">
+                <button
+                  className="flex flex-1 cursor-pointer items-center gap-3 text-left"
+                  onClick={() => {
+                    const existingChatId = chatsByFileId.get(file.id);
+                    if (existingChatId) {
+                      navigate({
+                        to: "/chat/$chatId",
+                        params: { chatId: existingChatId },
+                      });
+                    } else {
+                      createChatMutation.mutate(file.id);
+                    }
+                  }}
+                  type="button"
+                >
                   <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 font-medium text-primary text-xs">
                     {FILE_TYPE_LABELS[file.mimeType] || "FILE"}
                   </div>
@@ -204,7 +248,7 @@ export function FileList() {
                       {formatDate(file.createdAt)}
                     </p>
                   </div>
-                </div>
+                </button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -228,14 +272,30 @@ export function FileList() {
                       <Pencil className="mr-2 h-4 w-4" />
                       Rename
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        openChatDialog({ id: file.id, name: file.name })
-                      }
-                    >
-                      <Bot className="mr-2 h-4 w-4" />
-                      Ask AI
-                    </DropdownMenuItem>
+                    {chatsByFileId.has(file.id) ? (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const chatId = chatsByFileId.get(file.id);
+                          if (chatId) {
+                            navigate({
+                              to: "/chat/$chatId",
+                              params: { chatId },
+                            });
+                          }
+                        }}
+                      >
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        View Chats
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        disabled={createChatMutation.isPending}
+                        onClick={() => createChatMutation.mutate(file.id)}
+                      >
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Start Chat
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       disabled={deleteMutation.isPending}
                       onClick={() => deleteMutation.mutate(file.id)}
@@ -290,12 +350,6 @@ export function FileList() {
           </form>
         </DialogContent>
       </Dialog>
-
-      <FileChatDialog
-        file={fileToChat}
-        onOpenChange={setChatDialogOpen}
-        open={chatDialogOpen}
-      />
     </Card>
   );
 }

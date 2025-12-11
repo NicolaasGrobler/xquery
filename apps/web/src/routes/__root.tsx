@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import Header from "@/components/header";
+import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { trpc } from "@/utils/trpc";
@@ -53,6 +54,7 @@ function RootComponent() {
           <Outlet />
         </div>
         <Toaster richColors />
+        <KeyboardShortcutsDialog />
       </ThemeProvider>
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />

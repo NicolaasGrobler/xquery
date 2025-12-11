@@ -14,6 +14,35 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../index";
 import { openai } from "../lib/openai";
 
+type FileRecord = {
+  id: string;
+  storagePath: string;
+  originalFilename: string;
+  mimeType: string;
+};
+
+async function syncFileToOpenAI(fileRecord: FileRecord): Promise<void> {
+  const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+    .from(DOCUMENTS_BUCKET)
+    .download(fileRecord.storagePath);
+
+  if (downloadError || !fileData) {
+    throw new Error("Failed to download file from storage");
+  }
+
+  const openaiFile = await openai.files.create({
+    file: new File([fileData], fileRecord.originalFilename, {
+      type: fileRecord.mimeType,
+    }),
+    purpose: "assistants",
+  });
+
+  await db
+    .update(file)
+    .set({ openaiFileId: openaiFile.id })
+    .where(eq(file.id, fileRecord.id));
+}
+
 const mimeTypeSchema = z.enum(ALLOWED_MIME_TYPES);
 
 const createUploadUrlSchema = z.object({
@@ -107,6 +136,10 @@ export const filesRouter = router({
           .set({ name: input.name })
           .where(eq(file.id, input.fileId));
       }
+
+      syncFileToOpenAI(fileRecord).catch((err) => {
+        console.error("Background OpenAI sync failed:", err);
+      });
 
       return { success: true, fileId: input.fileId };
     }),

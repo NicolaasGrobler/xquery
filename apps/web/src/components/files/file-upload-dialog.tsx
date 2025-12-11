@@ -79,12 +79,25 @@ function FileStatusIcon({ status }: { status: FileStatus }) {
   }
 }
 
-export function FileUploadDialog({ onSuccess }: { onSuccess?: () => void }) {
+type FileUploadDialogProps = {
+  onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
+
+export function FileUploadDialog({
+  onSuccess,
+  open: controlledOpen,
+  onOpenChange,
+}: FileUploadDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
