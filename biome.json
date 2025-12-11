@@ -22,8 +22,20 @@
       "!**/.source"
     ]
   },
-  "extends": [
-    "ultracite/core",
-    "ultracite/react"
-  ]
+  "extends": ["ultracite/core", "ultracite/react"],
+  "linter": {
+    "rules": {
+      "performance": {
+        "useTopLevelRegex": "off",
+        "noBarrelFile": "off",
+        "noNamespaceImport": "off"
+      },
+      "style": {
+        "noNestedTernary": "off"
+      },
+      "nursery": {
+        "noLeakedRender": "off"
+      }
+    }
+  }
 }
