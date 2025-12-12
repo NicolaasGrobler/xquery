@@ -19,6 +19,24 @@ A modern TypeScript monorepo for querying and managing files with OpenAI integra
 - **Husky** - Git hooks for code quality
 - **Turborepo** - Optimized monorepo build system
 
+## Prerequisites
+
+This project requires [Bun](https://bun.sh) as the package manager and runtime. **npm and yarn are not supported** due to bun-specific features:
+
+- `catalog:` protocol for shared dependency versions
+- `workspace:*` dependency resolution
+- Bun's native hot reloading and compilation
+
+Install Bun:
+
+```bash
+# macOS/Linux
+curl -fsSL https://bun.sh/install | bash
+
+# Windows
+powershell -c "irm bun.sh/install.ps1 | iex"
+```
+
 ## Getting Started
 
 First, install the dependencies:

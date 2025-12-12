@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 
-const VALID_INVITATION_CODE = "xenet.ai";
+const VALID_INVITATION_CODE = process.env.INVITATION_CODE;
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

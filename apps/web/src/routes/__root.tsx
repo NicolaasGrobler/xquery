@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { ErrorBoundary, NotFound } from "@/components/error-boundary";
 import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
 import { MobileHeader, Sidebar } from "@/components/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -23,6 +24,8 @@ export type RouterAppContext = {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
   head: () => ({
     meta: [
       {
@@ -60,16 +63,17 @@ function RootComponent() {
             <Outlet />
           </main>
         ) : (
-          <div className="flex h-svh flex-col md:flex-row">
-            <MobileHeader />
-            <Sidebar />
-            <main className="flex-1 overflow-auto">
-              <Outlet />
-            </main>
-          </div>
+          <KeyboardShortcutsDialog>
+            <div className="flex h-svh flex-col md:flex-row">
+              <MobileHeader />
+              <Sidebar />
+              <main className="flex-1 overflow-auto">
+                <Outlet />
+              </main>
+            </div>
+          </KeyboardShortcutsDialog>
         )}
         <Toaster richColors />
-        {!isAuthRoute && <KeyboardShortcutsDialog />}
       </ThemeProvider>
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />

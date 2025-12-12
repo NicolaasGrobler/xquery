@@ -9,7 +9,9 @@
       "Bash(dir:*)",
       "Bash(findstr:*)",
       "WebSearch",
-      "WebFetch(domain:hono.dev)"
+      "WebFetch(domain:hono.dev)",
+      "Bash(bun add:*)",
+      "Bash(bun x ultracite:*)"
     ]
   }
 }

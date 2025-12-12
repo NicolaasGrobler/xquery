@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { FileText, Home, Menu, MessageSquare, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { KeyboardShortcutsTrigger } from "./keyboard-shortcuts-dialog";
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
 import UserMenu from "./user-menu";
@@ -61,6 +62,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         )}
       </nav>
+
+      <div className="px-4 pb-2">
+        <KeyboardShortcutsTrigger />
+      </div>
 
       <div className="border-t p-4">
         <div className="flex items-center justify-between">

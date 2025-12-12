@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, FileText, Loader2, Send, User } from "lucide-react";
+import { Bot, Download, FileText, Loader2, Send, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -48,6 +48,42 @@ function ChatPage() {
       setIsStreaming(true);
       setStreamingContent("");
       setStatusMessage("Connecting...");
+
+      // Optimistically update the chat title if this is the first message
+      const isFirstMessage = !chatQuery.data?.title;
+      if (isFirstMessage) {
+        const optimisticTitle =
+          question.length > 30 ? `${question.substring(0, 30)}...` : question;
+
+        // Update chat.get cache for current chat
+        const chatGetKey = [
+          ["chat", "get"],
+          { input: { chatId }, type: "query" },
+        ];
+        queryClient.setQueryData(chatGetKey, (old: unknown) => {
+          if (old && typeof old === "object") {
+            return { ...old, title: optimisticTitle };
+          }
+          return old;
+        });
+
+        // Update chat.list cache for sidebar
+        const fileId = chatQuery.data?.fileId;
+        if (fileId) {
+          const chatListKey = [
+            ["chat", "list"],
+            { input: { fileId }, type: "query" },
+          ];
+          queryClient.setQueryData(chatListKey, (old: unknown) => {
+            if (old && Array.isArray(old)) {
+              return old.map((c: { id: string; title: string | null }) =>
+                c.id === chatId ? { ...c, title: optimisticTitle } : c
+              );
+            }
+            return old;
+          });
+        }
+      }
 
       abortControllerRef.current = new AbortController();
 
@@ -146,6 +182,11 @@ function ChatPage() {
                 setPendingMessage(null);
                 setStreamingContent("");
                 setIsStreaming(false);
+
+                // Invalidate chat list to sync title and updatedAt with server
+                queryClient.invalidateQueries({
+                  queryKey: [["chat", "list"]],
+                });
               } else if (currentEvent === "error") {
                 throw new Error(data.message);
               }
@@ -174,7 +215,7 @@ function ChatPage() {
         );
       }
     },
-    [chatId]
+    [chatId, chatQuery.data?.title, chatQuery.data?.fileId]
   );
 
   const handleSubmit = useCallback(
@@ -221,6 +262,29 @@ function ChatPage() {
   );
 
   useHotkeys(hotkeys);
+
+  const handleExportChat = useCallback(() => {
+    if (!messages?.length) {
+      return;
+    }
+
+    const exportData = messages.map(({ role, content, createdAt }) => ({
+      role,
+      content,
+      createdAt,
+    }));
+
+    const title = chatQuery.data?.title;
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chat-${title ? title.slice(0, 30).replace(/[^a-z0-9]/gi, "-") : chatId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [messages, chatQuery.data?.title, chatId]);
 
   useEffect(
     () => () => {
@@ -273,6 +337,15 @@ function ChatPage() {
             </p>
           )}
         </div>
+        <Button
+          disabled={!messages?.length}
+          onClick={handleExportChat}
+          size="icon"
+          title="Export chat as JSON"
+          variant="ghost"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">

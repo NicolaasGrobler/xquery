@@ -28,7 +28,10 @@
     "db:push": "turbo -F @xquery/db db:push",
     "db:studio": "turbo -F @xquery/db db:studio",
     "db:generate": "turbo -F @xquery/db db:generate",
-    "db:migrate": "turbo -F @xquery/db db:migrate"
+    "db:migrate": "turbo -F @xquery/db db:migrate",
+    "test": "turbo test",
+    "test:web": "turbo -F web test:run",
+    "test:api": "turbo -F @xquery/api test:run"
   },
   "dependencies": {
     "dotenv": "^17.2.2",

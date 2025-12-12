@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   History,
+  Loader2,
   MessageSquare,
   MoreVertical,
   Plus,
@@ -250,7 +251,11 @@ function ChatLayout() {
           size="sm"
           variant="ghost"
         >
-          <Plus className="h-4 w-4" />
+          {createChatMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
         </Button>
       </div>
 
@@ -455,7 +460,11 @@ function ChatLayout() {
             size="sm"
             variant="ghost"
           >
-            <Plus className="h-4 w-4" />
+            {createChatMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
           </Button>
           <Button
             onClick={() => setMobileHistoryOpen(true)}

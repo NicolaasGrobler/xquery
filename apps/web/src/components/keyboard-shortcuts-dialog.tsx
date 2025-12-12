@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { Keyboard } from "lucide-react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -42,7 +43,44 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function KeyboardShortcutsDialog() {
+type KeyboardShortcutsContextType = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+};
+
+const KeyboardShortcutsContext =
+  createContext<KeyboardShortcutsContextType | null>(null);
+
+function useKeyboardShortcutsContext() {
+  const context = useContext(KeyboardShortcutsContext);
+  if (!context) {
+    throw new Error(
+      "KeyboardShortcuts components must be used within KeyboardShortcutsDialog"
+    );
+  }
+  return context;
+}
+
+export function KeyboardShortcutsTrigger() {
+  const { setOpen } = useKeyboardShortcutsContext();
+
+  return (
+    <button
+      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground text-xs transition-colors hover:text-foreground"
+      onClick={() => setOpen(true)}
+      type="button"
+    >
+      <Keyboard className="h-3.5 w-3.5" />
+      Keyboard shortcuts
+    </button>
+  );
+}
+
+export function KeyboardShortcutsDialog({
+  children,
+}: {
+  children?: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
 
   const hotkeys = useMemo(
@@ -69,40 +107,45 @@ export function KeyboardShortcutsDialog() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
+  const contextValue = useMemo(() => ({ open, setOpen }), [open]);
+
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          {shortcuts.map((shortcut) => (
-            <div
-              className="flex items-center justify-between gap-4"
-              key={shortcut.description}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{shortcut.description}</span>
-                {shortcut.context && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
-                    {shortcut.context}
-                  </span>
-                )}
+    <KeyboardShortcutsContext.Provider value={contextValue}>
+      {children}
+      <Dialog onOpenChange={setOpen} open={open}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {shortcuts.map((shortcut) => (
+              <div
+                className="flex items-center justify-between gap-4"
+                key={shortcut.description}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{shortcut.description}</span>
+                  {shortcut.context && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
+                      {shortcut.context}
+                    </span>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {shortcut.keys.map((key, index) => (
+                    <span className="flex items-center gap-1" key={key}>
+                      {index > 0 && (
+                        <span className="text-muted-foreground text-xs">+</span>
+                      )}
+                      <Kbd>{key}</Kbd>
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {shortcut.keys.map((key, index) => (
-                  <span className="flex items-center gap-1" key={key}>
-                    {index > 0 && (
-                      <span className="text-muted-foreground text-xs">+</span>
-                    )}
-                    <Kbd>{key}</Kbd>
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </KeyboardShortcutsContext.Provider>
   );
 }
