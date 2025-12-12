@@ -297,7 +297,7 @@ export function FileUploadDialog({
           Upload Documents
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Upload Documents</DialogTitle>
           <DialogDescription>
@@ -348,19 +348,23 @@ export function FileUploadDialog({
             <p className="font-medium text-sm">
               Selected Files ({selectedFiles.length}):
             </p>
-            <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-2">
+            <div className="max-h-48 space-y-2 overflow-y-auto overflow-x-hidden rounded-md border p-2">
               {selectedFiles.map((sf) => (
                 <div
                   className={cn(
-                    "flex items-center justify-between rounded-md bg-muted/50 p-2 text-sm",
+                    "flex items-center gap-2 overflow-hidden rounded-md bg-muted/50 p-2 text-sm",
                     sf.status === "error" && "bg-destructive/10"
                   )}
                   key={sf.id}
                 >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    {getFileTypeIcon(sf.file.type)}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{sf.file.name}</p>
+                  <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                    <div className="shrink-0">
+                      {getFileTypeIcon(sf.file.type)}
+                    </div>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <p className="truncate font-medium text-sm">
+                        {sf.file.name}
+                      </p>
                       <p className="text-muted-foreground text-xs">
                         {formatFileSize(sf.file.size)}
                         {sf.error && (
@@ -371,7 +375,7 @@ export function FileUploadDialog({
                       </p>
                     </div>
                   </div>
-                  <div className="ml-2 flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <FileStatusIcon status={sf.status} />
                     {sf.status !== "uploading" && sf.status !== "done" && (
                       <Button
