@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Clock, FileText, MessageSquare, Wifi, WifiOff } from "lucide-react";
+import { StaggerContainer, StaggerItem } from "@/components/motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
@@ -196,15 +197,23 @@ function DashboardPage() {
     <div className="container mx-auto px-4 py-6 md:py-8">
       <h1 className="mb-6 font-bold text-2xl sm:mb-8 md:text-3xl">Dashboard</h1>
 
-      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <FilesStatCard count={files.length} isLoading={isLoading} />
-        <ChatsStatCard count={chats.length} isLoading={isLoading} />
-        <LastActivityCard isLoading={isLoading} lastChat={lastChat} />
-        <ApiStatusCard
-          isLoading={healthCheck.isLoading}
-          isOnline={!!healthCheck.data}
-        />
-      </div>
+      <StaggerContainer className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <StaggerItem>
+          <FilesStatCard count={files.length} isLoading={isLoading} />
+        </StaggerItem>
+        <StaggerItem>
+          <ChatsStatCard count={chats.length} isLoading={isLoading} />
+        </StaggerItem>
+        <StaggerItem>
+          <LastActivityCard isLoading={isLoading} lastChat={lastChat} />
+        </StaggerItem>
+        <StaggerItem>
+          <ApiStatusCard
+            isLoading={healthCheck.isLoading}
+            isOnline={!!healthCheck.data}
+          />
+        </StaggerItem>
+      </StaggerContainer>
     </div>
   );
 }

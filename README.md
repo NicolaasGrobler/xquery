@@ -8,6 +8,7 @@ A modern TypeScript monorepo for querying and managing files with OpenAI integra
 - **TanStack Router** - File-based routing with full type safety
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components
+- **Framer Motion** - Subtle, professional animations with accessibility support
 - **Hono** - Lightweight, performant server framework
 - **tRPC** - End-to-end type-safe APIs
 - **Bun** - Runtime environment

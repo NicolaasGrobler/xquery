@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Download,
   Files,
@@ -41,6 +42,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { staggerContainerVariants, staggerItemVariants } from "@/lib/motion";
 import { queryClient, trpc, trpcClient } from "@/utils/trpc";
 
 const FILE_TYPE_LABELS: Record<string, string> = {
@@ -374,6 +377,7 @@ function DeleteDialog({
 
 export function FileList() {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [fileToRename, setFileToRename] = useState<{
     id: string;
@@ -553,23 +557,44 @@ export function FileList() {
             <p className="text-sm">Upload your first document to get started</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {files.map((file) => (
-              <FileItem
-                existingChatId={chatsByFileId.get(file.id)}
-                file={file}
-                isCreatingChat={createChatMutation.isPending}
-                isDownloading={downloadMutation.isPending}
-                key={file.id}
-                onDelete={handleOpenDeleteDialog}
-                onDownload={(fileId) => downloadMutation.mutate(fileId)}
-                onRename={handleOpenRenameDialog}
-                onStartChat={(fileId) => createChatMutation.mutate(fileId)}
-                onViewChat={handleViewChat}
-                onViewDetails={handleOpenDetailsDialog}
-              />
-            ))}
-          </div>
+          <motion.div
+            animate="visible"
+            className="space-y-2"
+            initial={prefersReducedMotion ? false : "hidden"}
+            variants={
+              prefersReducedMotion ? undefined : staggerContainerVariants
+            }
+          >
+            <AnimatePresence mode="popLayout">
+              {files.map((file) => (
+                <motion.div
+                  exit={
+                    prefersReducedMotion
+                      ? undefined
+                      : { opacity: 0, x: -20, transition: { duration: 0.15 } }
+                  }
+                  key={file.id}
+                  layout={!prefersReducedMotion}
+                  variants={
+                    prefersReducedMotion ? undefined : staggerItemVariants
+                  }
+                >
+                  <FileItem
+                    existingChatId={chatsByFileId.get(file.id)}
+                    file={file}
+                    isCreatingChat={createChatMutation.isPending}
+                    isDownloading={downloadMutation.isPending}
+                    onDelete={handleOpenDeleteDialog}
+                    onDownload={(fileId) => downloadMutation.mutate(fileId)}
+                    onRename={handleOpenRenameDialog}
+                    onStartChat={(fileId) => createChatMutation.mutate(fileId)}
+                    onViewChat={handleViewChat}
+                    onViewDetails={handleOpenDetailsDialog}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </CardContent>
 

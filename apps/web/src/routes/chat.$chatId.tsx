@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
 import { Bot, Download, FileText, Loader2, Send, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Markdown from "react-markdown";
@@ -9,6 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHotkeys } from "@/hooks/use-hotkeys";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import {
+  fadeVariants,
+  slideFromLeftVariants,
+  slideFromRightVariants,
+} from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { queryClient, trpc } from "@/utils/trpc";
 
@@ -16,8 +23,20 @@ export const Route = createFileRoute("/chat/$chatId")({
   component: ChatPage,
 });
 
+function getMessageVariants(
+  role: "user" | "assistant",
+  prefersReducedMotion: boolean
+) {
+  if (prefersReducedMotion) {
+    return;
+  }
+  return role === "user" ? slideFromRightVariants : slideFromLeftVariants;
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: chat page has necessary UI complexity for streaming, messages, and animations
 function ChatPage() {
   const { chatId } = Route.useParams();
+  const prefersReducedMotion = useReducedMotion();
   const [input, setInput] = useState("");
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState<string>("");
@@ -360,81 +379,109 @@ function ChatPage() {
             </div>
           )}
 
-          {displayMessages.map((message) => (
-            <div
-              className={cn(
-                "flex gap-3",
-                message.role === "user" ? "justify-end" : "justify-start"
-              )}
-              key={message.id}
-            >
-              {message.role === "assistant" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Bot className="h-4 w-4 text-primary" />
-                </div>
-              )}
-              <div
+          <AnimatePresence mode="popLayout">
+            {displayMessages.map((message) => (
+              <motion.div
+                animate="visible"
                 className={cn(
-                  "max-w-[80%] rounded-lg px-4 py-2",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                  "flex gap-3",
+                  message.role === "user" ? "justify-end" : "justify-start"
+                )}
+                initial={prefersReducedMotion ? false : "hidden"}
+                key={message.id}
+                layout={!prefersReducedMotion}
+                variants={getMessageVariants(
+                  message.role,
+                  prefersReducedMotion
                 )}
               >
-                {message.role === "assistant" ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <Markdown remarkPlugins={[remarkGfm]}>
-                      {message.content}
-                    </Markdown>
+                {message.role === "assistant" && (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Bot className="h-4 w-4 text-primary" />
                   </div>
-                ) : (
-                  <p className="whitespace-pre-wrap text-sm">
-                    {message.content}
-                  </p>
                 )}
-              </div>
-              {message.role === "user" && (
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-lg px-4 py-2",
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  )}
+                >
+                  {message.role === "assistant" ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <Markdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </Markdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm">
+                      {message.content}
+                    </p>
+                  )}
+                </div>
+                {message.role === "user" && (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
+                    <User className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {pendingMessage && (
+              <motion.div
+                animate="visible"
+                className="flex justify-end gap-3"
+                exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+                initial={prefersReducedMotion ? false : "hidden"}
+                variants={
+                  prefersReducedMotion ? undefined : slideFromRightVariants
+                }
+              >
+                <div className="max-w-[80%] rounded-lg bg-primary px-4 py-2 text-primary-foreground">
+                  <p className="whitespace-pre-wrap text-sm">
+                    {pendingMessage}
+                  </p>
+                </div>
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
                   <User className="h-4 w-4 text-primary-foreground" />
                 </div>
-              )}
-            </div>
-          ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {pendingMessage && (
-            <div className="flex justify-end gap-3">
-              <div className="max-w-[80%] rounded-lg bg-primary px-4 py-2 text-primary-foreground">
-                <p className="whitespace-pre-wrap text-sm">{pendingMessage}</p>
-              </div>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
-                <User className="h-4 w-4 text-primary-foreground" />
-              </div>
-            </div>
-          )}
-
-          {isStreaming && (
-            <div className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                <Bot className="h-4 w-4 text-primary" />
-              </div>
-              {streamingContent ? (
-                <div className="max-w-[80%] rounded-lg bg-muted px-4 py-2">
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <Markdown remarkPlugins={[remarkGfm]}>
-                      {streamingContent}
-                    </Markdown>
+          <AnimatePresence>
+            {isStreaming && (
+              <motion.div
+                animate="visible"
+                className="flex gap-3"
+                initial={prefersReducedMotion ? false : "hidden"}
+                variants={prefersReducedMotion ? undefined : fadeVariants}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <Bot className="h-4 w-4 text-primary" />
+                </div>
+                {streamingContent ? (
+                  <div className="max-w-[80%] rounded-lg bg-muted px-4 py-2">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <Markdown remarkPlugins={[remarkGfm]}>
+                        {streamingContent}
+                      </Markdown>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 rounded-lg bg-muted px-4 py-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-muted-foreground text-sm">
-                    {statusMessage || "Thinking..."}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+                ) : (
+                  <div className="flex items-center gap-2 rounded-lg bg-muted px-4 py-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-muted-foreground text-sm">
+                      {statusMessage || "Thinking..."}
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div ref={messagesEndRef} />
         </div>
