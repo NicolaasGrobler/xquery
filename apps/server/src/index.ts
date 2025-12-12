@@ -50,23 +50,33 @@ app.post("/api/chat/stream", async (c) => {
   }
 
   return streamSSE(c, async (stream) => {
+    let clientDisconnected = false;
+
+    const writeEvent = async (event: string, data: unknown) => {
+      if (clientDisconnected) {
+        return;
+      }
+      try {
+        await stream.writeSSE({
+          event,
+          data: JSON.stringify(data),
+        });
+      } catch {
+        clientDisconnected = true;
+      }
+    };
+
     try {
       for await (const event of streamQuestion({
         userId: session.user.id,
         chatId: body.chatId,
         question: body.question,
       })) {
-        await stream.writeSSE({
-          event: event.type,
-          data: JSON.stringify(event.data),
-        });
+        await writeEvent(event.type, event.data);
       }
     } catch (error) {
-      await stream.writeSSE({
-        event: "error",
-        data: JSON.stringify({
-          message: error instanceof Error ? error.message : "Unknown error",
-        }),
+      await writeEvent("error", {
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });

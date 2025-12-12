@@ -41,10 +41,13 @@ function validateFile(file: File): string | null {
   return null;
 }
 
+type UploadPhase = "idle" | "uploading" | "syncing";
+
 export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [uploadPhase, setUploadPhase] = useState<UploadPhase>("idle");
 
   const uploadMutation = useMutation({
     mutationFn: async ({
@@ -54,6 +57,8 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
       file: File;
       customName: string;
     }) => {
+      setUploadPhase("uploading");
+
       const uploadUrlResult = await trpcClient.files.createUploadUrl.mutate({
         filename: file.name,
         mimeType: file.type as
@@ -76,6 +81,8 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
         throw new Error("Upload failed");
       }
 
+      setUploadPhase("syncing");
+
       await trpcClient.files.confirmUpload.mutate({
         fileId: uploadUrlResult.fileId,
         name: customName || undefined,
@@ -84,8 +91,9 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
       return { fileId: uploadUrlResult.fileId };
     },
     onSuccess: () => {
-      toast.success("File uploaded successfully");
+      toast.success("File uploaded and ready for chat");
       setSelectedFile(null);
+      setUploadPhase("idle");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -93,6 +101,7 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
       onSuccess?.();
     },
     onError: (error) => {
+      setUploadPhase("idle");
       toast.error(error.message || "Upload failed");
     },
   });
@@ -278,7 +287,11 @@ export function FileUploadForm({ onSuccess }: { onSuccess?: () => void }) {
             disabled={!selectedFile || uploadMutation.isPending}
             type="submit"
           >
-            {uploadMutation.isPending ? "Uploading..." : "Upload File"}
+            {uploadPhase === "uploading"
+              ? "Uploading..."
+              : uploadPhase === "syncing"
+                ? "Preparing for AI..."
+                : "Upload File"}
           </Button>
         </form>
       </CardContent>

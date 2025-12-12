@@ -105,10 +105,12 @@ function ChatPage() {
                 const userMsgId = data.userMessageId;
                 const assistantMsgId = data.assistantMessageId;
 
-                const existingData = queryClient.getQueryData([
+                const queryKey = [
                   ["chat", "get"],
                   { input: { chatId }, type: "query" },
-                ]);
+                ];
+
+                const existingData = queryClient.getQueryData(queryKey);
 
                 if (existingData && typeof existingData === "object") {
                   const oldData = existingData as {
@@ -119,40 +121,31 @@ function ChatPage() {
                       createdAt: Date;
                     }>;
                   };
-                  queryClient.setQueryData(
-                    [["chat", "get"], { input: { chatId }, type: "query" }],
-                    {
-                      ...oldData,
-                      messages: [
-                        ...(oldData.messages || []),
-                        {
-                          id: userMsgId,
-                          role: "user",
-                          content: question,
-                          createdAt: new Date(),
-                        },
-                        {
-                          id: assistantMsgId,
-                          role: "assistant",
-                          content: accumulatedContent,
-                          createdAt: new Date(),
-                        },
-                      ],
-                    }
-                  );
-                } else {
-                  queryClient.invalidateQueries({
-                    queryKey: [["chat", "get"]],
+                  queryClient.setQueryData(queryKey, {
+                    ...oldData,
+                    messages: [
+                      ...(oldData.messages || []),
+                      {
+                        id: userMsgId,
+                        role: "user",
+                        content: question,
+                        createdAt: new Date(),
+                      },
+                      {
+                        id: assistantMsgId,
+                        role: "assistant",
+                        content: accumulatedContent,
+                        createdAt: new Date(),
+                      },
+                    ],
                   });
+                } else {
+                  await queryClient.invalidateQueries({ queryKey });
                 }
 
                 setPendingMessage(null);
                 setStreamingContent("");
                 setIsStreaming(false);
-
-                queryClient.invalidateQueries({
-                  queryKey: [["chat", "list"]],
-                });
               } else if (currentEvent === "error") {
                 throw new Error(data.message);
               }
@@ -166,7 +159,7 @@ function ChatPage() {
           setStreamingContent("");
           setIsStreaming(false);
           queryClient.invalidateQueries({
-            queryKey: [["chat", "get"]],
+            queryKey: [["chat", "get"], { input: { chatId }, type: "query" }],
           });
         }
       } catch (error) {
@@ -236,7 +229,9 @@ function ChatPage() {
     []
   );
 
-  if (chatQuery.isLoading) {
+  const isInitialLoading = chatQuery.isLoading && !chatQuery.data;
+
+  if (isInitialLoading) {
     return (
       <div className="flex h-full flex-col">
         <div className="border-b p-4">
@@ -251,7 +246,7 @@ function ChatPage() {
     );
   }
 
-  if (chatQuery.error) {
+  if (chatQuery.error && !chatQuery.data) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
@@ -266,7 +261,7 @@ function ChatPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-4 border-b px-4 py-3">
+      <div className="flex h-14 items-center gap-4 border-b px-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />

@@ -4,7 +4,7 @@ import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 
 export const Route = createFileRoute("/dashboard")({
-  component: RouteComponent,
+  component: DashboardPage,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -17,16 +17,29 @@ export const Route = createFileRoute("/dashboard")({
   },
 });
 
-function RouteComponent() {
-  const { session } = Route.useRouteContext();
-
-  const privateData = useQuery(trpc.privateData.queryOptions());
+function DashboardPage() {
+  const healthCheck = useQuery(trpc.healthCheck.queryOptions());
 
   return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Welcome {session.data?.user.name}</p>
-      <p>API: {privateData.data?.message}</p>
+    <div className="container mx-auto max-w-3xl px-4 py-8">
+      <h1 className="mb-6 font-bold text-3xl">Dashboard</h1>
+      <div className="grid gap-6">
+        <section className="rounded-lg border p-4">
+          <h2 className="mb-2 font-medium">API Status</h2>
+          <div className="flex items-center gap-2">
+            <div
+              className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
+            />
+            <span className="text-muted-foreground text-sm">
+              {healthCheck.isLoading
+                ? "Checking..."
+                : healthCheck.data
+                  ? "Connected"
+                  : "Disconnected"}
+            </span>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

@@ -190,7 +190,7 @@ function ChatLayout() {
             params: { chatId: remainingChats[0].id },
           });
         } else {
-          navigate({ to: "/files" });
+          navigate({ to: "/dashboard" });
         }
       }
     },
@@ -200,7 +200,6 @@ function ChatLayout() {
   });
 
   const chats = chatsQuery.data ?? [];
-  const fileName = currentChatQuery.data?.fileName;
 
   const hotkeys = useMemo(
     () => [
@@ -230,13 +229,11 @@ function ChatLayout() {
   useHotkeys(hotkeys);
 
   return (
-    <div className="flex h-[calc(100vh-3rem)]">
+    <div className="flex h-full">
       <div className="flex w-64 min-w-0 flex-col overflow-hidden border-r bg-muted/30">
-        <div className="flex items-center justify-between border-b p-3">
+        <div className="flex h-14 items-center justify-between border-b px-3">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate font-semibold text-sm">
-              {fileName ?? "Chats"}
-            </h2>
+            <h2 className="truncate font-semibold text-sm">Chats</h2>
           </div>
           <Button
             disabled={!currentFileId || createChatMutation.isPending}
@@ -369,7 +366,7 @@ function ChatLayout() {
                 <MessageSquare className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p>No chats yet</p>
                 <Button asChild className="mt-2" size="sm" variant="outline">
-                  <Link to="/files">Start from Files</Link>
+                  <Link to="/dashboard">Start from Dashboard</Link>
                 </Button>
               </div>
             ) : (

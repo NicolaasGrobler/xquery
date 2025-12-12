@@ -4,14 +4,17 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Outlet,
+  useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import Header from "@/components/header";
 import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
+import { Sidebar } from "@/components/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { trpc } from "@/utils/trpc";
 import "../index.css";
+
+const AUTH_ROUTES = ["/login"];
 
 export type RouterAppContext = {
   trpc: typeof trpc;
@@ -23,11 +26,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        title: "xquery",
+        title: "XQuery",
       },
       {
         name: "description",
-        content: "xquery is a web application",
+        content: "XQuery is a web application",
       },
     ],
     links: [
@@ -40,6 +43,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootComponent() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+
   return (
     <>
       <HeadContent />
@@ -49,12 +55,20 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <div className="grid h-svh grid-rows-[auto_1fr]">
-          <Header />
-          <Outlet />
-        </div>
+        {isAuthRoute ? (
+          <main className="h-svh">
+            <Outlet />
+          </main>
+        ) : (
+          <div className="flex h-svh">
+            <Sidebar />
+            <main className="flex-1 overflow-auto">
+              <Outlet />
+            </main>
+          </div>
+        )}
         <Toaster richColors />
-        <KeyboardShortcutsDialog />
+        {!isAuthRoute && <KeyboardShortcutsDialog />}
       </ThemeProvider>
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />

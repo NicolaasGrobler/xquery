@@ -137,9 +137,7 @@ export const filesRouter = router({
           .where(eq(file.id, input.fileId));
       }
 
-      syncFileToOpenAI(fileRecord).catch((err) => {
-        console.error("Background OpenAI sync failed:", err);
-      });
+      await syncFileToOpenAI(fileRecord);
 
       return { success: true, fileId: input.fileId };
     }),
