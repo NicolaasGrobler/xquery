@@ -292,7 +292,7 @@ export function FileUploadDialog({
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Upload className="mr-2 h-4 w-4" />
           Upload Documents
         </Button>

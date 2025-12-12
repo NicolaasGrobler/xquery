@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
-import { Sidebar } from "@/components/sidebar";
+import { MobileHeader, Sidebar } from "@/components/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { trpc } from "@/utils/trpc";
@@ -60,7 +60,8 @@ function RootComponent() {
             <Outlet />
           </main>
         ) : (
-          <div className="flex h-svh">
+          <div className="flex h-svh flex-col md:flex-row">
+            <MobileHeader />
             <Sidebar />
             <main className="flex-1 overflow-auto">
               <Outlet />

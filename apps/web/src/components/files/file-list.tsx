@@ -104,9 +104,9 @@ function FileItem({
   isCreatingChat,
 }: FileItemProps) {
   return (
-    <div className="flex items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted/50">
+    <div className="flex items-center justify-between gap-2 rounded-md border p-2 transition-colors hover:bg-muted/50 sm:gap-3 sm:p-3">
       <button
-        className="flex flex-1 cursor-pointer items-center gap-3 text-left"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left sm:gap-3"
         onClick={() => {
           if (existingChatId) {
             onViewChat(existingChatId);
@@ -116,19 +116,21 @@ function FileItem({
         }}
         type="button"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 font-medium text-primary text-xs">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 font-medium text-primary text-xs sm:h-10 sm:w-10">
           {FILE_TYPE_LABELS[file.mimeType] || "FILE"}
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="font-medium">{file.name}</p>
+            <p className="truncate font-medium text-sm sm:text-base">
+              {file.name}
+            </p>
             {file.openaiFileId && (
-              <span title="Synced to AI">
+              <span className="shrink-0" title="Synced to AI">
                 <Sparkles className="h-3 w-3 text-amber-500" />
               </span>
             )}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="truncate text-muted-foreground text-xs">
             {formatFileSize(file.size)} &middot; {formatDate(file.createdAt)}
           </p>
         </div>
@@ -136,7 +138,7 @@ function FileItem({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" variant="ghost">
+          <Button className="shrink-0" size="sm" variant="ghost">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

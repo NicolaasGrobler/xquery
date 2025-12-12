@@ -7,6 +7,20 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**"]
     },
+    "server#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**"],
+      "env": [
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CORS_ORIGIN",
+        "DATABASE_URL",
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_KEY",
+        "OPENAI_API_KEY"
+      ]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },

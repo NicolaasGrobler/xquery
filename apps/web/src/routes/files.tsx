@@ -37,9 +37,9 @@ function FilesPage() {
   useHotkeys(hotkeys);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-bold text-3xl">Documents</h1>
+    <div className="container mx-auto px-4 py-6 md:py-8">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="font-bold text-2xl md:text-3xl">Documents</h1>
         <FileUploadDialog
           onOpenChange={setUploadDialogOpen}
           open={uploadDialogOpen}
