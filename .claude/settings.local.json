@@ -5,7 +5,11 @@
       "Bash(cat:*)",
       "Bash(npx ultracite check)",
       "Bash(bun run:*)",
-      "Bash(npx ultracite:*)"
+      "Bash(npx ultracite:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "WebSearch",
+      "WebFetch(domain:hono.dev)"
     ]
   }
 }

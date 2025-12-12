@@ -1,6 +1,6 @@
 # xquery
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, TRPC, and more.
+A modern TypeScript monorepo for querying and managing files with OpenAI integration.
 
 ## Features
 
@@ -13,7 +13,9 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Bun** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
 - **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
+- **Better-Auth** - Authentication
+- **OpenAI** - File chat and vector store integration
+- **Ultracite** - Zero-config Biome preset for linting and formatting
 - **Husky** - Git hooks for code quality
 - **Turborepo** - Optimized monorepo build system
 
@@ -57,12 +59,26 @@ The API is running at [http://localhost:3000](http://localhost:3000).
 ```
 xquery/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono, TRPC)
+│   ├── web/                    # Frontend application (React + TanStack Router)
+│   │   └── src/
+│   │       ├── components/     # React components
+│   │       │   ├── files/      # File management components
+│   │       │   └── ui/         # shadcn/ui components
+│   │       ├── hooks/          # Custom React hooks
+│   │       ├── lib/            # Utility functions
+│   │       └── routes/         # TanStack Router file-based routes
+│   └── server/                 # Backend API (Hono)
 ├── packages/
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── api/                    # tRPC routers & business logic
+│   │   └── src/
+│   │       ├── routers/        # tRPC route handlers (chat, files)
+│   │       └── lib/            # OpenAI integration
+│   ├── auth/                   # Better-Auth configuration
+│   ├── config/                 # Shared TypeScript config
+│   └── db/                     # Drizzle ORM & database schema
+│       └── src/
+│           ├── schema/         # Database table definitions
+│           └── migrations/     # Database migrations
 ```
 
 ## Available Scripts
@@ -74,3 +90,15 @@ xquery/
 - `bun run check-types`: Check TypeScript types across all apps
 - `bun run db:push`: Push schema changes to database
 - `bun run db:studio`: Open database studio UI
+
+## Code Quality
+
+This project uses [Ultracite](https://github.com/haydenbleasel/ultracite), a zero-config Biome preset for linting and formatting.
+
+```bash
+# Check for issues
+npx ultracite check
+
+# Fix issues automatically
+npx ultracite fix
+```
