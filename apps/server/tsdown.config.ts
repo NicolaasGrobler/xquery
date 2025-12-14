@@ -5,5 +5,6 @@ export default defineConfig({
   format: "esm",
   outDir: "./dist",
   clean: true,
-  noExternal: [/@xquery\/.*/],
+  noExternal: [/.*/],
+  external: ["bun:*"],
 });

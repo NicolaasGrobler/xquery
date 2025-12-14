@@ -121,3 +121,34 @@ npx ultracite check
 # Fix issues automatically
 npx ultracite fix
 ```
+
+## Server Deployment (Docker)
+
+Due to a recent Vercel infrastructure change causing Hono.js functions to crash, the server is deployed via Docker instead.
+
+### Build and Run
+
+```bash
+# Build the image
+docker build -t xquery-server .
+
+# Run with environment variables
+docker run -p 3000:3000 --env-file apps/server/.env xquery-server
+```
+
+### Required Environment Variables
+
+Create `apps/server/.env` with the following:
+
+```env
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=
+CORS_ORIGIN=
+INVITATION_CODE=
+DATABASE_URL=
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+OPENAI_API_KEY=
+```
+
+The server bundle is fully self-contained (all dependencies bundled via tsdown), resulting in a minimal Docker image.
